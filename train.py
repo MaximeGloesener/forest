@@ -31,12 +31,10 @@ assert torch.cuda.is_available()
 parser = argparse.ArgumentParser()
 
 # model choice
-parser.add_argument("--model", type=str, default="resnet56", choices=["resnet20", "resnet32", "resnet44", "resnet56",
-    "mobilenetv2_x0_5", "mobilenetv2_x0_75", "mobilenetv2_x1_0", "mobilenetv2_x1_4","vgg11_bn", "vgg13_bn",  "vgg16_bn",  "vgg19_bn",
-    "repvgg_a0", "repvgg_a1", "repvgg_a2"], help="model to prune")
+parser.add_argument("--model", type=str)
 # training parameters 
-parser.add_argument("--batch-size", type=int, default=512)
-parser.add_argument("--epochs", type=int, default=100)
+parser.add_argument("--batch-size", type=int, default=32)
+parser.add_argument("--epochs", type=int, default=40)
 parser.add_argument("--lr", default=0.01, type=float, help="learning rate")
 
 args = parser.parse_args()
@@ -55,7 +53,9 @@ config = {
     "loss": "CrossEntropyLoss",
 }
 
-run = wandb.init(project=f"end_pruning_{args.model}_on_{args.dataset}", config=config)
+run = wandb.init(project=f"FIRE_CLASSIFICATION", config=config)
+# name wandb run
+wandb.run.name = f"{args.model}"
 
 # Device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -63,18 +63,15 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # Load model
 def load_model(model_name):
     # Get the model class from torchvision.models using the model name
-    model_class = getattr(models, model_name)
+    model_class = getattr(models, model_name.lower())
     
     # Get the corresponding weights class dynamically
-    weights_class_name = model_name.upper() + '_Weights'
+    weights_class_name = model_name + '_Weights'
     weights_class = getattr(models, weights_class_name)
     
     # Load the model with the specified weights
-    try:
-        model = model_class(weights=weights_class.IMAGENET1K_V2)
-    except AttributeError:
-        model = model_class(weights=weights_class.IMAGENET1K_V1)
-    
+    model = model_class(weights=weights_class.DEFAULT)
+
     return model
 
 model = load_model(args.model).to(device)
@@ -86,7 +83,7 @@ torch.manual_seed(config["random_seed"])
 
 
 # Write Dataloader
-data_dir = 'path/to/FIRE_DATABASE'
+data_dir = 'FIRE_DATABASE_3'
 
 data_transforms = {
     'train': transforms.Compose([
@@ -233,7 +230,6 @@ def main():
     print(f"Test accuracy: {acc:.2f} | Test loss: {loss:.4f}")
     wandb.log({"test_acc": acc, "test_loss": loss})
     run.finish()
-   
 
 if __name__ == "__main__":
     main()
