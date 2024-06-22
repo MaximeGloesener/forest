@@ -33,8 +33,8 @@ parser = argparse.ArgumentParser()
 # model choice
 parser.add_argument("--model", type=str)
 # training parameters 
-parser.add_argument("--batch-size", type=int, default=32)
-parser.add_argument("--epochs", type=int, default=40)
+parser.add_argument("--batch-size", type=int, default=16)
+parser.add_argument("--epochs", type=int, default=30)
 parser.add_argument("--lr", default=0.01, type=float, help="learning rate")
 
 args = parser.parse_args()
@@ -108,7 +108,7 @@ dataset = datasets.ImageFolder(root=data_dir)
 
 # Define the lengths of train, val, and test splits
 train_size = int(0.8 * len(dataset))
-val_size = int(0.15 * len(dataset))
+val_size = int(0.1 * len(dataset))
 test_size = len(dataset) - train_size - val_size
 
 # Split the dataset
