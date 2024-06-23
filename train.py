@@ -60,7 +60,7 @@ wandb.run.name = f"{args.model}"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Load model
-def load_model(model_name):
+def load_model(model_name, num_classes=3):
     # Get the model class from torchvision.models using the model name
     model_class = getattr(models, model_name.lower())
     
@@ -71,12 +71,6 @@ def load_model(model_name):
     # Load the model with the specified weights
     model = model_class(weights=weights_class.DEFAULT)
 
-    # Classifier should classify 3 classes, add a new layer with 3 output features
-    # Find layer with output 1000 features and replace it with a new layer with 3 output features
-import torch
-import torchvision.models as models
-
-def modify_model(model, num_classes=3):
     # Find the last layer with 1000 output features
     for name, module in reversed(list(model.named_modules())):
         if isinstance(module, torch.nn.Linear) and module.out_features == 1000:
@@ -119,7 +113,7 @@ def modify_model(model, num_classes=3):
     return model
 
 model = load_model(args.model).to(device)
-print(model)
+
 
 # Fixer le seed pour la reproductibilité
 random.seed(config["random_seed"])
