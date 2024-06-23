@@ -20,7 +20,6 @@ from torchvision.transforms import *
 from torchvision import datasets, transforms
 from tqdm.auto import tqdm
 import argparse
-from functools import partial
 from torch.utils.data import DataLoader, random_split
 import torchvision.models as models
 
@@ -35,7 +34,7 @@ parser.add_argument("--model", type=str)
 # training parameters 
 parser.add_argument("--batch-size", type=int, default=16)
 parser.add_argument("--epochs", type=int, default=30)
-parser.add_argument("--lr", default=0.01, type=float, help="learning rate")
+parser.add_argument("--lr", default=0.001, type=float, help="learning rate")
 
 args = parser.parse_args()
 
@@ -53,7 +52,7 @@ config = {
     "loss": "CrossEntropyLoss",
 }
 
-run = wandb.init(project=f"FIRE_CLASSIFICATION", config=config)
+run = wandb.init(project=f"test", config=config)
 # name wandb run
 wandb.run.name = f"{args.model}"
 
@@ -72,6 +71,16 @@ def load_model(model_name):
     # Load the model with the specified weights
     model = model_class(weights=weights_class.DEFAULT)
 
+    # Classifier should classify 3 classes, add a new layer with 3 output features
+    if hasattr(model, 'fc'):
+        num_ftrs = model.fc.in_features
+        model.fc = nn.Linear(num_ftrs, 3)
+    elif hasattr(model, 'classifier'):
+        num_ftrs = model.classifier[-1].in_features
+        model.classifier[-1] = nn.Linear(num_ftrs, 3)
+    else:
+        raise ValueError(f"Unable to modify last layer of {model_name}")
+  
     return model
 
 model = load_model(args.model).to(device)
@@ -142,7 +151,7 @@ def evaluate(
         # Move the data from CPU to GPU
         inputs = inputs.to(device)
         targets = targets.to(device)
-
+        
         # Inference
         outputs = model(inputs)
         # Calculate loss
