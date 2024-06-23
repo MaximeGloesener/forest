@@ -74,7 +74,7 @@ config = {
     "epochs_long_finetuning": 30,
     "dataset": "FIRE_DATABASE_3",
 }
-run = wandb.init(project=f"FIRE_CLASSIFICATION_PRUNED", config=config)
+run = wandb.init(project=f"FOREST_ALL", config=config)
 
 
 # Fixer le seed pour la reproductibilité
@@ -383,7 +383,7 @@ def main():
         model = torch.load(f'results/{config["model"]}.pth')
         model_teacher = copy.deepcopy(model) # teacher = base model, student = pruned model
         # name wandb run
-        wandb.run.name = f"{config['model']}_pruned"
+        wandb.run.name = f"{config['model']}_PRUNED"
         # Avant pruning
         example_input = torch.rand(1, 3, 32, 32).to(device)
         start_macs, start_params = tp.utils.count_ops_and_params(model, example_input)

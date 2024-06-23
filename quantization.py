@@ -40,9 +40,9 @@ config = {
     "batch_size": 1,
 }
 
-run = wandb.init(project=f"test", config=config)
+run = wandb.init(project=f"FOREST_ALL", config=config)
 # name wandb run
-wandb.run.name = f"{args.model}_quantization"
+wandb.run.name = f"{args.model}_QUANTIZED"
 
 # Evaluation loop
 @torch.no_grad()
@@ -132,6 +132,11 @@ acc, loss = evaluate(model, test_loader)
 print('Base Model After Pruning And KD') 
 print(f"Accuracy: {acc:.2f}%")
 print(f"Loss: {loss:.4f}")
+# log metrics in wandb
+wandb.log({"Accuracy before quantization": acc, "Loss before quantization": loss})
+wandb.run.summary["accuracy"] = acc
+wandb.run.summary["loss"] = loss
+
 
 example_input = torch.randn(1, 3, 224, 224).to(device)
 model_trt = torch2trt(model,[example_input], fp16_mode=True)
@@ -142,7 +147,12 @@ acc, loss = evaluate(model_trt, test_loader)
 print('Quantized Model')
 print(f"Accuracy: {acc:.2f}%")
 print(f"Loss: {loss:.4f}")
-
+# log 
+wandb.log({"Accuracy after quantization": acc, "Loss after quantization": loss})
+wandb.run.summary["accuracy_quant"] = acc
+wandb.run.summary["loss_quant"] = loss
 base_path = "results"
 torch.save(model_trt.state_dict(), f'{base_path}/{args.model}_QUANTIZED.pth')
-    
+
+
+
