@@ -72,18 +72,54 @@ def load_model(model_name):
     model = model_class(weights=weights_class.DEFAULT)
 
     # Classifier should classify 3 classes, add a new layer with 3 output features
-    if hasattr(model, 'fc'):
-        num_ftrs = model.fc.in_features
-        model.fc = nn.Linear(num_ftrs, 3)
-    elif hasattr(model, 'classifier'):
-        num_ftrs = model.classifier[-1].in_features
-        model.classifier[-1] = nn.Linear(num_ftrs, 3)
+    # Find layer with output 1000 features and replace it with a new layer with 3 output features
+import torch
+import torchvision.models as models
+
+def modify_model(model, num_classes=3):
+    # Find the last layer with 1000 output features
+    for name, module in reversed(list(model.named_modules())):
+        if isinstance(module, torch.nn.Linear) and module.out_features == 1000:
+            # Replace this layer with a new one
+            in_features = module.in_features
+            new_layer = torch.nn.Linear(in_features, num_classes)
+            
+            # Set the new layer in the model
+            if '.' in name:
+                parent_name, child_name = name.rsplit('.', 1)
+                parent = model
+                for part in parent_name.split('.'):
+                    parent = getattr(parent, part)
+                setattr(parent, child_name, new_layer)
+            else:
+                setattr(model, name, new_layer)
+            
+            print(f"Modified layer: {name}")
+            break
+        elif isinstance(module, torch.nn.Conv2d) and module.out_channels == 1000:
+            # Replace this layer with a new one
+            in_channels = module.in_channels
+            new_layer = torch.nn.Conv2d(in_channels, num_classes, kernel_size=1, stride=1)
+            
+            # Set the new layer in the model
+            if '.' in name:
+                parent_name, child_name = name.rsplit('.', 1)
+                parent = model
+                for part in parent_name.split('.'):
+                    parent = getattr(parent, part)
+                setattr(parent, child_name, new_layer)
+            else:
+                setattr(model, name, new_layer)
+            
+            print(f"Modified layer: {name}")
+            break
     else:
-        raise ValueError(f"Unable to modify last layer of {model_name}")
-  
+        raise ValueError("Could not find a suitable layer to modify")
+    
     return model
 
 model = load_model(args.model).to(device)
+print(model)
 
 # Fixer le seed pour la reproductibilité
 random.seed(config["random_seed"])
@@ -239,6 +275,6 @@ def main():
     print(f"Test accuracy: {acc:.2f} | Test loss: {loss:.4f}")
     wandb.log({"test_acc": acc, "test_loss": loss})
     run.finish()
-
+    
 if __name__ == "__main__":
     main()
