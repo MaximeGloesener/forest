@@ -61,6 +61,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Load model
 def load_model(model_name, num_classes=3):
+    print(f"Loading and modifying model: {model_name}")
     # Get the model class from torchvision.models using the model name
     model_class = getattr(models, model_name.lower())
     
@@ -89,7 +90,7 @@ def load_model(model_name, num_classes=3):
                 setattr(model, name, new_layer)
             
             print(f"Modified layer: {name}")
-            break
+            return model 
         elif isinstance(module, torch.nn.Conv2d) and module.out_channels == 1000:
             # Replace this layer with a new one
             in_channels = module.in_channels
@@ -106,14 +107,13 @@ def load_model(model_name, num_classes=3):
                 setattr(model, name, new_layer)
             
             print(f"Modified layer: {name}")
-            break
+            return model 
     else:
         raise ValueError("Could not find a suitable layer to modify")
-    
-    return model
+
 
 model = load_model(args.model).to(device)
-
+print(model)
 
 # Fixer le seed pour la reproductibilité
 random.seed(config["random_seed"])
@@ -262,13 +262,15 @@ def train(
     print(f'Best val acc: {best_acc:.2f}')
 
 
-
 def main():
+    print("Starting main function")
     train(model, train_loader, val_loader, args.epochs, args.lr, weight_decay=config["weight_decay"], save=f"{args.model}.pth")
+    print("Training completed")
     acc, loss = evaluate(model, test_loader)
     print(f"Test accuracy: {acc:.2f} | Test loss: {loss:.4f}")
     wandb.log({"test_acc": acc, "test_loss": loss})
     run.finish()
+    print("Main function completed")
     
 if __name__ == "__main__":
     main()
