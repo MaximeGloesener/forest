@@ -40,7 +40,7 @@ config = {
     "batch_size": 1,
 }
 
-run = wandb.init(project=f"FOREST_ALL", config=config)
+run = wandb.init(project=f"FOREST_ALL_QUANT", config=config)
 # name wandb run
 wandb.run.name = f"{args.model}_QUANTIZED"
 

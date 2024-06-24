@@ -32,7 +32,7 @@ parser = argparse.ArgumentParser()
 # model choice
 parser.add_argument("--model", type=str)
 # training parameters 
-parser.add_argument("--batch-size", type=int, default=16)
+parser.add_argument("--batch-size", type=int, default=8)
 parser.add_argument("--epochs", type=int, default=30)
 parser.add_argument("--lr", default=0.001, type=float, help="learning rate")
 
@@ -52,7 +52,7 @@ config = {
     "loss": "CrossEntropyLoss",
 }
 
-run = wandb.init(project=f"FOREST_ALL", config=config)
+run = wandb.init(project=f"FOREST", config=config)
 # name wandb run
 wandb.run.name = f"{args.model}"
 
@@ -158,9 +158,9 @@ train_dataset.dataset.transform = data_transforms['train']
 val_dataset.dataset.transform = data_transforms['val']
 test_dataset.dataset.transform = data_transforms['test']
 
-train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=4)
-val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=4)
-test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=4)
+train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
+test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
 
 
 
@@ -263,6 +263,7 @@ def train(
 
 
 def main():
+    """
     print("Starting main function")
     train(model, train_loader, val_loader, args.epochs, args.lr, weight_decay=config["weight_decay"], save=f"{args.model}.pth")
     print("Training completed")
@@ -271,6 +272,6 @@ def main():
     wandb.log({"test_acc": acc, "test_loss": loss})
     run.finish()
     print("Main function completed")
-    
+    """
 if __name__ == "__main__":
     main()

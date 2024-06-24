@@ -1,0 +1,4 @@
+- Diminuer la batch size pour lancer les runs pour éviter de OOM
+- Fixer la size input pour les transformers, faire un script séparé pour ces modèles pour pouvoir les entraîner 
+- Faire des graphiques avec matplotlib pour comparer les modèles, accuracy, loss, speed up
+- Lancer les benchmarks  

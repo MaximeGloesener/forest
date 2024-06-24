@@ -35,7 +35,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--model", type=str)
 
 # training parameters 
-parser.add_argument("--batch-size", type=int, default=16)
+parser.add_argument("--batch-size", type=int, default=8)
 parser.add_argument("--epochs", type=int, default=30)
 parser.add_argument("--lr", default=0.001, type=float, help="learning rate")
 
@@ -74,7 +74,7 @@ config = {
     "epochs_long_finetuning": 30,
     "dataset": "FIRE_DATABASE_3",
 }
-run = wandb.init(project=f"FOREST_ALL", config=config)
+run = wandb.init(project=f"FOREST_PRUNING_KD", config=config)
 
 
 # Fixer le seed pour la reproductibilité
@@ -379,75 +379,79 @@ def progressive_pruning_compression_ratio(pruner, model, compression_ratio, exam
 
 
 def main():
-    # Load all trained model from results folder
+    # name wandb run
+    wandb.run.name = f"{config['model']}_PRUNED"
+    try:
         model = torch.load(f'results/{config["model"]}.pth')
-        model_teacher = copy.deepcopy(model) # teacher = base model, student = pruned model
-        # name wandb run
-        wandb.run.name = f"{config['model']}_PRUNED"
-        # Avant pruning
-        example_input = torch.rand(1, 3, 32, 32).to(device)
-        start_macs, start_params = tp.utils.count_ops_and_params(model, example_input)
-        start_acc, start_loss = evaluate(model, test_loader)
-        print('----- Avant pruning -----')
-        print(f'Nombre de MACs = {start_macs/1e6:.3f} M')
-        print(f'Nombre de paramètres = {start_params/1e6:.3f} M')
-        print(f'Précision = {start_acc:.2f} %')
-        print(f'Loss = {start_loss:.3f}')
-        print('')
-        wandb.run.summary["start_macs (M)"] = f'{start_macs/1e6:.3f}'
-        wandb.run.summary["start_params (M)"] = f'{start_params/1e6:.3f}'
-        wandb.run.summary["start_acc (%)"] = f'{start_acc:.2f}'
-        wandb.run.summary["start_loss"] = f'{start_loss:.3f}'
+    except:
+        print("Model not found")
+        return
+    model_teacher = copy.deepcopy(model) # teacher = base model, student = pruned model
+
+    # Avant pruning
+    example_input = torch.rand(1, 3, 32, 32).to(device)
+    start_macs, start_params = tp.utils.count_ops_and_params(model, example_input)
+    start_acc, start_loss = evaluate(model, test_loader)
+    print('----- Avant pruning -----')
+    print(f'Nombre de MACs = {start_macs/1e6:.3f} M')
+    print(f'Nombre de paramètres = {start_params/1e6:.3f} M')
+    print(f'Précision = {start_acc:.2f} %')
+    print(f'Loss = {start_loss:.3f}')
+    print('')
+    wandb.run.summary["start_macs (M)"] = f'{start_macs/1e6:.3f}'
+    wandb.run.summary["start_params (M)"] = f'{start_params/1e6:.3f}'
+    wandb.run.summary["start_acc (%)"] = f'{start_acc:.2f}'
+    wandb.run.summary["start_loss"] = f'{start_loss:.3f}'
 
 
-        compression_ratio = config["compression_ratio"]
-        pruner = get_pruner(model, example_input)
-       
+    compression_ratio = config["compression_ratio"]
+    pruner = get_pruner(model, example_input)
+    
 
-        progressive_pruning_compression_ratio(pruner, model, compression_ratio, example_input)
-        pruned_macs, pruned_params = tp.utils.count_ops_and_params(
-            model, example_input)
-        pruned_acc, pruned_loss = evaluate(model, test_loader)
-        print('----- Après pruning -----')
-        print(f'Nombre de MACs = {pruned_macs/1e6:.3f} M')
-        print(f'Nombre de paramètres = {pruned_params/1e6:.3f} M')
-        print(f'Précision = {pruned_acc:.2f} %')
-        print(f'Loss = {pruned_loss:.3f}')
-        print('')
+    progressive_pruning_compression_ratio(pruner, model, compression_ratio, example_input)
+    pruned_macs, pruned_params = tp.utils.count_ops_and_params(
+        model, example_input)
+    pruned_acc, pruned_loss = evaluate(model, test_loader)
+    print('----- Après pruning -----')
+    print(f'Nombre de MACs = {pruned_macs/1e6:.3f} M')
+    print(f'Nombre de paramètres = {pruned_params/1e6:.3f} M')
+    print(f'Précision = {pruned_acc:.2f} %')
+    print(f'Loss = {pruned_loss:.3f}')
+    print('')
 
-        # Results
-        print('----- Results before fine tuning -----')
-        print(f'Params: {start_params/1e6:.2f} M => {pruned_params/1e6:.2f} M')
-        print(f'MACs: {start_macs/1e6:.2f} M => {pruned_macs/1e6:.2f} M')
-        print(f'Accuracy: {start_acc:.2f} % => {pruned_acc:.2f} %')
-        print(f'Loss: {start_loss:.2f} => {pruned_loss:.2f}')
-        print('')
+    # Results
+    print('----- Results before fine tuning -----')
+    print(f'Params: {start_params/1e6:.2f} M => {pruned_params/1e6:.2f} M')
+    print(f'MACs: {start_macs/1e6:.2f} M => {pruned_macs/1e6:.2f} M')
+    print(f'Accuracy: {start_acc:.2f} % => {pruned_acc:.2f} %')
+    print(f'Loss: {start_loss:.2f} => {pruned_loss:.2f}')
+    print('')
 
-        # Fine tuning
-        print('----- Fine tuning -----')
-        path = f'{config["model"]}_pruned_kd.pth'
-        if args.kd:
-            print('----- Knowledge distillation -----')
-            train_kd(model, model_teacher, train_loader, test_loader,
-                        epochs=config["epochs_long_finetuning"], lr=config["lr"], alpha=args.alpha_kd, temperature=args.temperature_kd, save=path)
-        else:
-            train(model, train_loader, test_loader,
-            epochs=config["epochs_long_finetuning"], lr=config["lr"], save=path)
+    # Fine tuning
+    print('----- Fine tuning -----')
+    path = f'{config["model"]}_pruned_kd.pth'
+    if args.kd:
+        print('----- Knowledge distillation -----')
+        train_kd(model, model_teacher, train_loader, test_loader,
+                    epochs=config["epochs_long_finetuning"], lr=config["lr"], alpha=args.alpha_kd, temperature=args.temperature_kd, save=path)
+    else:
+        train(model, train_loader, test_loader,
+        epochs=config["epochs_long_finetuning"], lr=config["lr"], save=path)
 
-        # Post fine tuning
-        end_macs, end_params = tp.utils.count_ops_and_params(model, example_input)
-        end_acc, end_loss = evaluate(model, test_loader)
-        print('----- Results after fine tuning -----')
-        print(f'Params: {start_params/1e6:.2f} M => {end_params/1e6:.2f} M')
-        print(f'MACs: {start_macs/1e6:.2f} M => {end_macs/1e6:.2f} M')
-        print(f'Accuracy: {start_acc:.2f} % => {end_acc:.2f} %')
-        print(f'Loss: {start_loss:.2f} => {end_loss:.2f}')
-        # log les valeurs dans wandb
-        wandb.run.summary["best_acc"] = end_acc
-        wandb.run.summary["best_loss"] = end_loss
-        wandb.run.summary["end macs (M)"] = end_macs/1e6
-        wandb.run.summary["end num_params (M)"] = end_params/1e6
-        wandb.run.summary["size (MB)"] = get_model_size(model)/8e6
+    # Post fine tuning
+    end_macs, end_params = tp.utils.count_ops_and_params(model, example_input)
+    end_acc, end_loss = evaluate(model, test_loader)
+    print('----- Results after fine tuning -----')
+    print(f'Params: {start_params/1e6:.2f} M => {end_params/1e6:.2f} M')
+    print(f'MACs: {start_macs/1e6:.2f} M => {end_macs/1e6:.2f} M')
+    print(f'Accuracy: {start_acc:.2f} % => {end_acc:.2f} %')
+    print(f'Loss: {start_loss:.2f} => {end_loss:.2f}')
+    # log les valeurs dans wandb
+    wandb.run.summary["best_acc"] = end_acc
+    wandb.run.summary["best_loss"] = end_loss
+    wandb.run.summary["end macs (M)"] = end_macs/1e6
+    wandb.run.summary["end num_params (M)"] = end_params/1e6
+    wandb.run.summary["size (MB)"] = get_model_size(model)/8e6
 
 if __name__ == "__main__":
     main()
