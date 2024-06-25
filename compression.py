@@ -119,9 +119,9 @@ train_dataset.dataset.transform = data_transforms['train']
 val_dataset.dataset.transform = data_transforms['val']
 test_dataset.dataset.transform = data_transforms['test']
 
-train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=4)
-val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=4)
-test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=4)
+train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
+test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
 
 
 
