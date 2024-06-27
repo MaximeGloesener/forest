@@ -2,3 +2,4 @@
 *.jpg
 /wandb
 *.pth
+__pycache__/
