@@ -35,9 +35,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--model", type=str)
 
 # training parameters 
-parser.add_argument("--batch-size", type=int, default=8)
+parser.add_argument("--batch-size", type=int, default=4)
 parser.add_argument("--epochs", type=int, default=30)
-parser.add_argument("--lr", default=0.001, type=float, help="learning rate")
+parser.add_argument("--lr", default=3e-4, type=float, help="learning rate")
 
 # pruning parameters
 parser.add_argument("--method", type=str, default="group_norm", choices=["random", "l1", "lamp", "slim", "group_norm", "group_sl"], help="pruning method")
@@ -246,8 +246,8 @@ def train_kd(
 
     optimizer = torch.optim.SGD(model_student.parameters(
     ), lr=lr, momentum=0.9, weight_decay=weight_decay)
-    # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs)
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[60,80], gamma=0.1)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs)
+    # scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[60,80], gamma=0.1)
     criterion = nn.CrossEntropyLoss()
     best_acc = -1
     best_checkpoint = dict()
@@ -389,7 +389,7 @@ def main():
     model_teacher = copy.deepcopy(model) # teacher = base model, student = pruned model
 
     # Avant pruning
-    example_input = torch.rand(1, 3, 32, 32).to(device)
+    example_input = torch.rand(1, 3, 224, 224).to(device)
     start_macs, start_params = tp.utils.count_ops_and_params(model, example_input)
     start_acc, start_loss = evaluate(model, test_loader)
     print('----- Avant pruning -----')

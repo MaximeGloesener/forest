@@ -52,7 +52,7 @@ config = {
     "loss": "CrossEntropyLoss",
 }
 
-run = wandb.init(project=f"FOREST", config=config)
+run = wandb.init(project=f"FOREST_TRAIN", config=config)
 # name wandb run
 wandb.run.name = f"{args.model}"
 
@@ -263,7 +263,6 @@ def train(
 
 
 def main():
-    """
     print("Starting main function")
     train(model, train_loader, val_loader, args.epochs, args.lr, weight_decay=config["weight_decay"], save=f"{args.model}.pth")
     print("Training completed")
@@ -272,6 +271,5 @@ def main():
     wandb.log({"test_acc": acc, "test_loss": loss})
     run.finish()
     print("Main function completed")
-    """
 if __name__ == "__main__":
     main()
