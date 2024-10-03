@@ -1,5 +1,5 @@
 """
-Script used to train models 
+Script used to train models
 """
 
 
@@ -26,14 +26,14 @@ import torchvision.models as models
 assert torch.cuda.is_available()
 
 
-# parser 
+# parser
 parser = argparse.ArgumentParser()
 
 # model choice
 parser.add_argument("--model", type=str)
-# training parameters 
-parser.add_argument("--batch-size", type=int, default=8)
-parser.add_argument("--epochs", type=int, default=30)
+# training parameters
+parser.add_argument("--batch-size", type=int, default=32)
+parser.add_argument("--epochs", type=int, default=100)
 parser.add_argument("--lr", default=0.001, type=float, help="learning rate")
 
 args = parser.parse_args()
@@ -52,7 +52,7 @@ config = {
     "loss": "CrossEntropyLoss",
 }
 
-run = wandb.init(project=f"FOREST_TRAIN", config=config)
+run = wandb.init(project=f"FORET_TRAINING", config=config)
 # name wandb run
 wandb.run.name = f"{args.model}"
 
@@ -64,11 +64,11 @@ def load_model(model_name, num_classes=3):
     print(f"Loading and modifying model: {model_name}")
     # Get the model class from torchvision.models using the model name
     model_class = getattr(models, model_name.lower())
-    
+
     # Get the corresponding weights class dynamically
     weights_class_name = model_name + '_Weights'
     weights_class = getattr(models, weights_class_name)
-    
+
     # Load the model with the specified weights
     model = model_class(weights=weights_class.DEFAULT)
 
@@ -78,7 +78,7 @@ def load_model(model_name, num_classes=3):
             # Replace this layer with a new one
             in_features = module.in_features
             new_layer = torch.nn.Linear(in_features, num_classes)
-            
+
             # Set the new layer in the model
             if '.' in name:
                 parent_name, child_name = name.rsplit('.', 1)
@@ -88,14 +88,14 @@ def load_model(model_name, num_classes=3):
                 setattr(parent, child_name, new_layer)
             else:
                 setattr(model, name, new_layer)
-            
+
             print(f"Modified layer: {name}")
-            return model 
+            return model
         elif isinstance(module, torch.nn.Conv2d) and module.out_channels == 1000:
             # Replace this layer with a new one
             in_channels = module.in_channels
             new_layer = torch.nn.Conv2d(in_channels, num_classes, kernel_size=1, stride=1)
-            
+
             # Set the new layer in the model
             if '.' in name:
                 parent_name, child_name = name.rsplit('.', 1)
@@ -105,9 +105,9 @@ def load_model(model_name, num_classes=3):
                 setattr(parent, child_name, new_layer)
             else:
                 setattr(model, name, new_layer)
-            
+
             print(f"Modified layer: {name}")
-            return model 
+            return model
     else:
         raise ValueError("Could not find a suitable layer to modify")
 
@@ -181,7 +181,7 @@ def evaluate(
         # Move the data from CPU to GPU
         inputs = inputs.to(device)
         targets = targets.to(device)
-        
+
         # Inference
         outputs = model(inputs)
         # Calculate loss
@@ -214,7 +214,7 @@ def train(
     best_acc = -1
     best_checkpoint = dict()
 
-  
+
     for epoch in range(epochs):
         model.train()
         for inputs, targets in tqdm(train_loader, leave=False):
@@ -258,7 +258,7 @@ def train(
         if save_only_state_dict:
             torch.save(model.state_dict(), path)
         else:
-            torch.save(model, path)     
+            torch.save(model, path)
     print(f'Best val acc: {best_acc:.2f}')
 
 

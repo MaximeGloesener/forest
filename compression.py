@@ -28,15 +28,15 @@ from benchmark import get_model_size
 assert torch.cuda.is_available()
 
 
-# parser 
+# parser
 parser = argparse.ArgumentParser()
 
 # model choice
 parser.add_argument("--model", type=str)
 
-# training parameters 
-parser.add_argument("--batch-size", type=int, default=4)
-parser.add_argument("--epochs", type=int, default=30)
+# training parameters
+parser.add_argument("--batch-size", type=int, default=16)
+parser.add_argument("--epochs", type=int, default=100)
 parser.add_argument("--lr", default=3e-4, type=float, help="learning rate")
 
 # pruning parameters
@@ -49,7 +49,7 @@ parser.add_argument("--sl-total-epochs", type=int, default=100, help="epochs for
 parser.add_argument("--sl-lr", default=0.01, type=float, help="learning rate for sparsity learning")
 parser.add_argument("--iterative-steps", default=400, type=int)
 parser.add_argument("--max-sparsity", type=float, default=1.0)
-# kd 
+# kd
 parser.add_argument("--kd", action="store_true", default=True)
 parser.add_argument("--alpha-kd", type=float, default=0.9, help='alpha for kd loss')
 parser.add_argument("--temperature-kd", type=float, default=4, help='temperature for kd loss')
@@ -74,7 +74,7 @@ config = {
     "epochs_long_finetuning": 30,
     "dataset": "FIRE_DATABASE_3",
 }
-run = wandb.init(project=f"FOREST_PRUNING_KD", config=config)
+run = wandb.init(project=f"FORET_PRUNING_KD", config=config)
 
 
 # Fixer le seed pour la reproductibilité
@@ -177,7 +177,7 @@ def train(
     best_acc = -1
     best_checkpoint = dict()
 
-  
+
     for epoch in range(epochs):
         model.train()
         for inputs, targets in tqdm(train_loader, leave=False):
@@ -225,7 +225,7 @@ def train(
         if save_only_state_dict:
             torch.save(model.state_dict(), path)
         else:
-            torch.save(model, path)     
+            torch.save(model, path)
     print(f'Best val acc: {best_acc:.2f}')
 
 # training loop
@@ -252,7 +252,7 @@ def train_kd(
     best_acc = -1
     best_checkpoint = dict()
 
-  
+
     for epoch in range(epochs):
         model_student.train()
         model_teacher.train()
@@ -272,7 +272,7 @@ def train_kd(
             predict_student = F.log_softmax(out_student / temperature, dim=1)
             predict_teacher = F.softmax(out_teacher / temperature, dim=1)
             loss = nn.KLDivLoss(reduction="batchmean")(predict_student, predict_teacher) * (alpha * temperature * temperature) + criterion(out_student, targets) * (1-alpha)
-            
+
             loss.backward()
 
 
@@ -302,7 +302,7 @@ def train_kd(
         if save_only_state_dict:
             torch.save(model_student.state_dict(), path)
         else:
-            torch.save(model_student, path)     
+            torch.save(model_student, path)
     print(f'Best val acc: {best_acc:.2f}')
 
 # Pruner
@@ -341,9 +341,9 @@ def get_pruner(model, example_input):
             ignored_layers.append(m)
         elif isinstance(m, torch.nn.modules.conv._ConvNd) and m.out_channels == 3:
             ignored_layers.append(m)
-    
 
-    # Here we fix iterative_steps=200 to prune the model progressively with small steps 
+
+    # Here we fix iterative_steps=200 to prune the model progressively with small steps
     # until the required speed up is achieved.
     pruner = pruner_entry(
         model,
@@ -406,7 +406,7 @@ def main():
 
     compression_ratio = config["compression_ratio"]
     pruner = get_pruner(model, example_input)
-    
+
 
     progressive_pruning_compression_ratio(pruner, model, compression_ratio, example_input)
     pruned_macs, pruned_params = tp.utils.count_ops_and_params(

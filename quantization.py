@@ -1,6 +1,6 @@
 """
 Fichier pour la quantization du modèle
-""" 
+"""
 
 # Imports
 import wandb
@@ -25,7 +25,7 @@ assert torch.cuda.is_available(), "Cuda Not Available!"
 # Device
 device = torch.device("cuda")
 
-# parser 
+# parser
 parser = argparse.ArgumentParser()
 
 # model choice
@@ -40,7 +40,7 @@ config = {
     "batch_size": 1,
 }
 
-run = wandb.init(project=f"FOREST_ALL_QUANT", config=config)
+run = wandb.init(project=f"FORET_ALL_QUANT", config=config)
 # name wandb run
 wandb.run.name = f"{args.model}_QUANTIZED"
 
@@ -122,14 +122,14 @@ test_loader = DataLoader(test_dataset, batch_size=config["batch_size"], shuffle=
 
 
 
-# free cache memory 
+# free cache memory
 torch.cuda.empty_cache()
 
 model = torch.load(f"results/{args.model}_pruned_kd.pth").to(device)
 
 # Evalute model
 acc, loss = evaluate(model, test_loader)
-print('Base Model After Pruning And KD') 
+print('Base Model After Pruning And KD')
 print(f"Accuracy: {acc:.2f}%")
 print(f"Loss: {loss:.4f}")
 # log metrics in wandb
@@ -147,7 +147,7 @@ acc, loss = evaluate(model_trt, test_loader)
 print('Quantized Model')
 print(f"Accuracy: {acc:.2f}%")
 print(f"Loss: {loss:.4f}")
-# log 
+# log
 wandb.log({"Accuracy after quantization": acc, "Loss after quantization": loss})
 wandb.run.summary["accuracy_quant"] = acc
 wandb.run.summary["loss_quant"] = loss
