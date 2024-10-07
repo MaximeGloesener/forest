@@ -32,7 +32,7 @@ parser = argparse.ArgumentParser()
 # model choice
 parser.add_argument("--model", type=str)
 # training parameters
-parser.add_argument("--batch-size", type=int, default=32)
+parser.add_argument("--batch-size", type=int, default=16)
 parser.add_argument("--epochs", type=int, default=100)
 parser.add_argument("--lr", default=0.001, type=float, help="learning rate")
 

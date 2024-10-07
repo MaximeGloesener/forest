@@ -35,8 +35,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--model", type=str)
 
 # training parameters
-parser.add_argument("--batch-size", type=int, default=16)
-parser.add_argument("--epochs", type=int, default=100)
+parser.add_argument("--batch-size", type=int, default=8)
+parser.add_argument("--epochs", type=int, default=80)
 parser.add_argument("--lr", default=3e-4, type=float, help="learning rate")
 
 # pruning parameters
@@ -71,7 +71,7 @@ config = {
     "weight_decay": 5e-4,
     "scheduler": "CosineLR",
     "loss": "CrossEntropyLoss",
-    "epochs_long_finetuning": 30,
+    "epochs_long_finetuning": 50,
     "dataset": "FIRE_DATABASE_3",
 }
 run = wandb.init(project=f"FORET_PRUNING_KD", config=config)
@@ -350,9 +350,8 @@ def get_pruner(model, example_input):
         example_input,
         importance=imp,
         iterative_steps=args.iterative_steps,
-        ch_sparsity=1,
-        ch_sparsity_dict=ch_sparsity_dict,
-        max_ch_sparsity=args.max_sparsity,
+        pruning_ratio=1,
+        pruning_ratio_dict=ch_sparsity_dict,
         ignored_layers=ignored_layers,
         unwrapped_parameters=unwrapped_parameters,
     )

@@ -23,4 +23,5 @@ def detailed_memory_info():
     pynvml.nvmlShutdown()
 
 # detailed_memory_info()
-
+def get_model_size(model):
+    return sum(p.numel() for p in model.parameters())
